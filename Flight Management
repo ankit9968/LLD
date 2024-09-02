@@ -1,0 +1,159 @@
+package org.example;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Runway id type isAvailable
+// plane id type
+// flight plane id number runway
+
+
+    // Runway class
+ class Runway {
+        private int id;
+        private String type; // small, medium, large
+        private boolean isAvailable;
+
+        public Runway(int id, String type) {
+            this.id = id;
+            this.type = type;
+            this.isAvailable = true;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public boolean isAvailable() {
+            return isAvailable;
+        }
+
+        public void setAvailable(boolean available) {
+            isAvailable = available;
+        }
+    }
+
+    // Plane class
+    class Plane {
+        private int id;
+        private String type; // small, medium, large
+
+        public Plane(int id, String type) {
+            this.id = id;
+            this.type = type;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getType() {
+            return type;
+        }
+    }
+
+    // Flight class
+     class Flight {
+        private int id;
+        private String flightNumber;
+        private Plane plane;
+        private Runway runway;
+
+        public Flight(int id, String flightNumber, Plane plane) {
+            this.id = id;
+            this.flightNumber = flightNumber;
+            this.plane = plane;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getFlightNumber() {
+            return flightNumber;
+        }
+
+        public Plane getPlane() {
+            return plane;
+        }
+
+        public Runway getRunway() {
+            return runway;
+        }
+
+        public void setRunway(Runway runway) {
+            this.runway = runway;
+        }
+    }
+
+    // RunwayAllocator class with Singleton pattern
+    class RunwayAllocator {
+        private static RunwayAllocator instance;
+
+        private RunwayAllocator() {}
+
+        public static RunwayAllocator getInstance() {
+            if (instance == null) {
+                instance = new RunwayAllocator();
+            }
+            return instance;
+        }
+
+
+        public Runway allocateRunway(List<Runway> runways, Plane plane) {
+            for (Runway runway : runways) {
+                if (runway.isAvailable() && runway.getType().equals(plane.getType())) {
+                    runway.setAvailable(false);
+                    return runway;
+                }
+            }
+            return null; // No available runway found
+        }
+    }
+
+    // Factory class for creating Runway objects
+    class RunwayFactory {
+        public static Runway createRunway(int id, String type) {
+            return new Runway(id, type);
+        }
+    }
+
+    // Factory class for creating Plane objects
+    class PlaneFactory {
+        public static Plane createPlane(int id, String type) {
+            return new Plane(id, type);
+        }
+    }
+
+
+    // Main function
+    public class Main {
+        public static void main(String[] args) {
+            List<Runway> runways = new ArrayList<>();
+            runways.add(RunwayFactory.createRunway(1, "small"));
+            runways.add(RunwayFactory.createRunway(2, "medium"));
+            runways.add(RunwayFactory.createRunway(3, "large"));
+
+            Plane plane = PlaneFactory.createPlane(1, "medium");
+
+            RunwayAllocator allocator = RunwayAllocator.getInstance();
+            Runway assignedRunway = allocator.allocateRunway(runways, plane);
+
+            if (assignedRunway != null) {
+                System.out.println("Assigned Runway ID: " + assignedRunway.getId());
+            } else {
+                System.out.println("No available runway found for the plane.");
+            }
+            Runway runway=allocator.allocateRunway(runways,PlaneFactory.createPlane(2,"small"));
+            if (runway != null) {
+                System.out.println("Assigned Runway ID: " + runway.getId());
+            } else {
+                System.out.println("No available runway found for the plane.");
+            }
+        }
+    }
+
