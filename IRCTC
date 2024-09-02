@@ -1,0 +1,183 @@
+package org.example;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+class Train {
+    int trainId;
+    String trainNumber;
+    List<Station> route; // List of stations the train stops at
+    List<Seat> seats;
+
+    public Train(int trainId, String trainNumber, List<Station> route, List<Seat> seats) {
+        this.trainId = trainId;
+        this.trainNumber = trainNumber;
+        this.route = route;
+        this.seats = seats;
+    }
+}
+
+class Station {
+    int stationId;
+    String stationName;
+    String stationCode;
+
+    public Station(int stationId, String stationName, String stationCode) {
+        this.stationId = stationId;
+        this.stationName = stationName;
+        this.stationCode = stationCode;
+    }
+}
+
+class Seat {
+    int seatId;
+    String seatNumber;
+    List<Booking> bookings;
+
+    public Seat(int seatId, String seatNumber) {
+        this.seatId = seatId;
+        this.seatNumber = seatNumber;
+        this.bookings = new ArrayList<>();
+    }
+
+    public String getSeatNumber() {
+        return seatNumber;
+    }
+
+    public boolean isAvailable(String source, String destination, List<Station> route) {
+        // Iterate over bookings to check if there is any overlap in the route segments
+        int sourceIndex = getStationIndex(source, route);
+        int destinationIndex = getStationIndex(destination, route);
+
+        for (Booking booking : bookings) {
+            if (!booking.bookingStatus.equals("Cancelled")) {
+                int bookedSourceIndex = getStationIndex(booking.sourceStation, route);
+                int bookedDestinationIndex = getStationIndex(booking.destinationStation, route);
+
+                if ((sourceIndex >= bookedSourceIndex && sourceIndex < bookedDestinationIndex) ||
+                        (destinationIndex > bookedSourceIndex && destinationIndex <= bookedDestinationIndex)) {
+                    return false; // Overlapping segment found
+                }
+            }
+        }
+        return true; // No overlapping segment found
+    }
+
+    private int getStationIndex(String stationName, List<Station> route) {
+        for (int i = 0; i < route.size(); i++) {
+            if (route.get(i).stationName.equals(stationName)) {
+                return i;
+            }
+        }
+        return -1; // Station not found in route
+    }
+}
+
+class Booking {
+    int bookingId;
+    int userId;
+    String trainNumber;
+    String seatNumber;
+    String sourceStation;
+    String destinationStation;
+    String bookingStatus; // Active or Cancelled
+
+    public Booking(int bookingId, int userId, String trainNumber, String seatNumber, String sourceStation, String destinationStation, String bookingStatus) {
+        this.bookingId = bookingId;
+        this.userId = userId;
+        this.trainNumber = trainNumber;
+        this.seatNumber = seatNumber;
+        this.sourceStation = sourceStation;
+        this.destinationStation = destinationStation;
+        this.bookingStatus = bookingStatus;
+    }
+
+    public void setBookingStatus(String bookingStatus) {
+        this.bookingStatus = bookingStatus;
+    }
+
+    public String getSeatNumber() {
+        return seatNumber;
+    }
+}
+
+class User {
+    int userId;
+    String userName;
+
+    public User(int userId, String userName) {
+        this.userId = userId;
+        this.userName = userName;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+}
+
+class BookingService {
+    private int nextBookingId = 1;
+
+    public boolean bookTicket(User user, Train train, String sourceStation, String destinationStation) {
+        for (Seat seat : train.seats) {
+            if (seat.isAvailable(sourceStation, destinationStation, train.route)) {
+                Booking booking = new Booking(nextBookingId++, user.getUserId(), train.trainNumber, seat.getSeatNumber(), sourceStation, destinationStation, "Active");
+                seat.bookings.add(booking);
+                System.out.println("Booking successful. Seat: " + seat.getSeatNumber() + ", User: " + user.getUserName());
+                return true;
+            }
+        }
+        System.out.println("No seats available for the specified route.");
+        return false;
+    }
+
+    public void cancelTicket(Booking booking) {
+        booking.setBookingStatus("Cancelled");
+        System.out.println("Booking cancelled. Seat: " + booking.getSeatNumber());
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        // Initialize stations
+        Station station1 = new Station(1, "Station1", "ST1");
+        Station station2 = new Station(2, "Station2", "ST2");
+        Station station3 = new Station(3, "Station3", "ST3");
+        Station station4 = new Station(4, "Station4", "ST4");
+
+        // Initialize train route
+        List<Station> route = Arrays.asList(station1, station2, station3, station4);
+
+        // Initialize seats
+        Seat seat1 = new Seat(1, "S1");
+
+        // Initialize train
+        Train train = new Train(1, "Train1", route, Arrays.asList(seat1));
+
+        // Initialize users
+        User user1 = new User(1, "User1");
+        User user2 = new User(2, "User2");
+        User user3 = new User(3, "User3");
+
+        // Booking service
+        BookingService bookingService = new BookingService();
+
+        // Book tickets
+        bookingService.bookTicket(user1, train, "Station1", "Station2"); // User1 books from Station1 to Station2
+        bookingService.bookTicket(user2, train, "Station3", "Station4"); // User2 books from Station3 to Station4
+
+        // Attempt to book an overlapping segment
+        bookingService.bookTicket(user3, train, "Station2", "Station4"); // User3 tries to book from Station2 to Station4 (should fail if overlapping)
+
+        // Cancel User1's booking and attempt to rebook
+        if (!train.seats.get(0).bookings.isEmpty()) {
+            bookingService.cancelTicket(train.seats.get(0).bookings.get(0)); // Cancel User1's booking
+        }
+        bookingService.bookTicket(user3, train, "Station2", "Station3"); // Now User3 should be able to book from Station2 to Station4
+    }
+}
