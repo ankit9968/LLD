@@ -1,0 +1,340 @@
+package org.example;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// User class
+class User {
+    private int id;
+    private String username;
+    private String email;
+    private String password;
+    private String address;
+    private List<Product> products;
+    public User(int id, String username, String email, String password, String address) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.address = address;
+        this.products=new ArrayList<>();
+    }
+
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void addOrders(Product product) {
+        this.products.add(product);
+    }
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+}
+
+// Product class
+class Product {
+    private int id;
+    private String name;
+    private String description;
+    private double price;
+    private int stock;
+
+    public Product(int id, String name, String description, double price, int stock) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void reduceStock(int quantity) {
+        this.stock -= quantity;
+    }
+}
+
+// Order class
+class Order {
+    private int id;
+    private User user;
+    private double totalAmount;
+    private String status;
+    private List<OrderItem> items;
+
+    public Order(int id, User user) {
+        this.id = id;
+        this.user = user;
+        this.totalAmount = 0.0;
+        this.status = "Pending";
+        this.items = new ArrayList<>();
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        totalAmount += item.getTotalPrice();
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+}
+
+// OrderItem class
+class OrderItem {
+    private int id;
+    private Product product;
+    private int quantity;
+    private double price;
+
+    public OrderItem(int id, Product product, int quantity) {
+        this.id = id;
+        this.product = product;
+        this.quantity = quantity;
+        this.price = product.getPrice();
+        product.reduceStock(quantity);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public double getTotalPrice() {
+        return price * quantity;
+    }
+}
+
+// Payment class
+class Payment {
+    private int id;
+    private Order order;
+    private double amount;
+    private String paymentMethod;
+    private String status;
+
+    public Payment(int id, Order order, double amount, String paymentMethod) {
+        this.id = id;
+        this.order = order;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.status = "Pending";
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+}
+
+// Factory class for creating objects
+class ECommerceFactory {
+    public static User createUser(int id, String username, String email, String password, String address) {
+        return new User(id, username, email, password, address);
+    }
+
+    public static Product createProduct(int id, String name, String description, double price, int stock) {
+        return new Product(id, name, description, price, stock);
+    }
+
+    public static Order createOrder(int id, User user) {
+        return new Order(id, user);
+    }
+
+    public static OrderItem createOrderItem(int id, Product product, int quantity) {
+        return new OrderItem(id, product, quantity);
+    }
+
+    public static Payment createPayment(int id, Order order, double amount, String paymentMethod) {
+        return new Payment(id, order, amount, paymentMethod);
+    }
+}
+
+// Singleton class for managing the e-commerce system
+class ECommerceSystem {
+    private static ECommerceSystem instance;
+    private List<User> users;
+    private List<Product> products;
+    private List<Order> orders;
+    private List<Payment> payments;
+
+    private ECommerceSystem() {
+        users = new ArrayList<>();
+        products = new ArrayList<>();
+        orders = new ArrayList<>();
+        payments = new ArrayList<>();
+    }
+
+    public static ECommerceSystem getInstance() {
+        if (instance == null) {
+            instance = new ECommerceSystem();
+        }
+        return instance;
+    }
+
+    public void addUser(User user) {
+        users.add(user);
+    }
+
+    public void addProduct(Product product) {
+        products.add(product);
+    }
+
+    public void addOrder(Order order) {
+        orders.add(order);
+    }
+
+    public void addPayment(Payment payment) {
+        payments.add(payment);
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public List<Payment> getPayments() {
+        return payments;
+    }
+
+    public void placeOrder(User user, List<OrderItem> orderItems) {
+        Order order = ECommerceFactory.createOrder(orders.size()+ 1, user);
+        for (OrderItem item : orderItems) {
+            user.addOrders(item.getProduct());
+            order.addItem(item);
+        }
+
+        addOrder(order);
+        System.out.println("Order placed successfully!");
+    }
+
+    public void makePayment(Order order, double amount, String method) {
+        Payment payment = ECommerceFactory.createPayment(payments.size() + 1, order, amount, method);
+        payment.setStatus("Completed");
+        addPayment(payment);
+        order.setStatus("Paid");
+        System.out.println("Payment of total amount "+amount+" made successfully!");
+    }
+}
+
+// Main class to demonstrate the e-commerce system
+public class ECommerceApp {
+    public static void main(String[] args) {
+        ECommerceSystem system = ECommerceSystem.getInstance();
+
+        // Creating Users
+        User user1 = ECommerceFactory.createUser(1, "JohnDoe", "john@example.com", "password123", "123 Main St");
+        system.addUser(user1);
+
+        // Creating Products
+        Product product1 = ECommerceFactory.createProduct(1, "Laptop", "High-end gaming laptop", 1500.00, 10);
+        Product product2 = ECommerceFactory.createProduct(2, "Phone", "Latest smartphone", 800.00, 20);
+        system.addProduct(product1);
+        system.addProduct(product2);
+
+        // Placing an Order
+        List<OrderItem> orderItems = new ArrayList<>();
+        orderItems.add(ECommerceFactory.createOrderItem(1, product1, 1));
+        orderItems.add(ECommerceFactory.createOrderItem(2, product2, 2));
+        system.placeOrder(user1, orderItems);
+
+        // Making Payment
+        Order order = system.getOrders().get(0);
+        system.makePayment(order, order.getTotalAmount(), "Credit Card");
+        System.out.println(product1.getStock()+" "+product1.getName()+" is currently available in our stock ");
+        System.out.println(product2.getStock()+" "+product2.getName()+" is currently available in our stock ");
+        for(Product product: user1.getProducts())
+        {
+            System.out.println(product.getName());
+        }
+    }
+}
