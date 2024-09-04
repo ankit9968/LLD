@@ -1,0 +1,91 @@
+......................DATABASE TABLES.......................
+CREATE TABLE User (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Product (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    stock INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE `Order` (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE OrderItem (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    product_id INT,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES `Order`(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Payment (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES `Order`(id) ON DELETE CASCADE
+);
+........................Indexes to be created...............................
+CREATE INDEX idx_user_email ON User(email);
+CREATE INDEX idx_user_username ON User(username);
+CREATE INDEX idx_user_email ON User(email);
+CREATE INDEX idx_user_username ON User(username);
+CREATE INDEX idx_order_user_id ON `Order`(user_id);
+CREATE INDEX idx_order_status ON `Order`(status);
+CREATE INDEX idx_orderitem_order_product ON OrderItem(order_id, product_id);
+CREATE INDEX idx_payment_order_id ON Payment(order_id);
+.........................Insert queries.....................................
+CREATE INDEX idx_payment_order_id ON Payment(order_id);
+
+............................insert query..........................................
+INSERT INTO User (username, email, password, address) VALUES ('JohnDoe','john@example.com', 'password123', '123 Main St');
+
+Fetch All Products in Stock
+:=>)SELECT * FROM Product WHERE stock > 0;
+
+Create a New Order
+:=>)INSERT INTO `Order` (user_id, total_amount, status) VALUES (1, 3100.00, 'Pending');
+
+Add Items to an Order
+:=>)INSERT INTO OrderItem (order_id, product_id, quantity, price) VALUES (1, 1, 1, 1500.00);
+
+Update Product Stock After Purchase
+:=>)UPDATE Product SET stock = stock - 1 WHERE id = 1;
+:=>)UPDATE Product SET stock = stock - 2 WHERE id = 2;
+
+Make a payment
+:=>)INSERT INTO Payment (order_id, amount, payment_method, status) VALUES (1, 3100.00, 'Credit Card', 'Completed');
+UPDATE `Order` SET status = 'Paid' WHERE id = 1;
+
+.........................QUERIES.........................................
+Fetch All Orders for a User
+:=>)SELECT * FROM `Order` WHERE user_id = 1;
+
+Retrieve Order Details Along with Items
+
+:=>)
+SELECT o.id, o.total_amount, o.status, oi.product_id, oi.quantity, oi.price
+FROM `Order` o
+JOIN OrderItem oi ON o.id = oi.order_id
+WHERE o.id = 1;
