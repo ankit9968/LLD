@@ -1,0 +1,48 @@
+CREATE TABLE Runway (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    type VARCHAR(10) NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE Plane (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    type VARCHAR(10) NOT NULL
+);
+
+
+CREATE TABLE Flight (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    flight_number VARCHAR(20) UNIQUE NOT NULL,
+    plane_id INT,
+    runway_id INT,
+    FOREIGN KEY (plane_id) REFERENCES Plane(id),
+    FOREIGN KEY (runway_id) REFERENCES Runway(id)
+);
+
+
+.............We will create index on frequently queried data...............................
+
+CREATE INDEX idx_runway_type ON Runway(type);
+CREATE INDEX idx_plane_type ON Plane(type);
+CREATE INDEX idx_flight_number ON Flight(flight_number);
+CREATE INDEX idx_plane_runway ON Flight(plane_id, runway_id);
+
+................................QUERY......................................................
+Allocating a Runway to a Plane
+:=>) SELECT id FROM Runway WHERE type = 'medium' AND is_available = TRUE LIMIT 1;
+
+Assigning a Runway to a Flight
+:=>) UPDATE Runway SET is_available = FALSE WHERE id = 2;
+
+Inserting a New Flight
+:=>)INSERT INTO Flight (flight_number, plane_id, runway_id) VALUES ('AI202', 1, 2);
+
+Querying All Flights on a Specific Runway
+:=>) SELECT flight_number FROM Flight WHERE runway_id = 2;
+
+Querying All Flights for a Specific Plane Type
+:=> SELECT f.flight_number FROM Flight f JOIN Plane p ON f.plane_id = p.id WHERE p.type ='medium';
+
+
+
+
