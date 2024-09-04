@@ -1,0 +1,252 @@
+package org.example;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// User class
+import java.util.*;
+
+// Factory Method for Creating Entities
+abstract class EntityFactory {
+    public abstract User createUser(String username, String email, String password, String profileType);
+    public abstract Post createPost(User user, String photoUrl, String caption);
+    public abstract Comment createComment(int postId, int userId, int parentCommentId, String content);
+    public abstract Like createLike(int userId, Integer postId, Integer commentId);
+    public abstract Tag createTag(String name);
+}
+
+class ConcreteEntityFactory extends EntityFactory {
+    @Override
+    public User createUser(String username, String email, String password, String profileType) {
+        return new User(username, email, password, profileType);
+    }
+
+    @Override
+    public Post createPost(User user, String photoUrl, String caption) {
+        return new Post(user, photoUrl, caption);
+    }
+
+    @Override
+    public Comment createComment(int postId, int userId, int parentCommentId, String content) {
+        return new Comment(postId, userId, parentCommentId, content);
+    }
+
+    @Override
+    public Like createLike(int userId, Integer postId, Integer commentId) {
+        return new Like(userId, postId, commentId);
+    }
+
+    @Override
+    public Tag createTag(String name) {
+        return new Tag(name);
+    }
+}
+
+// Observer Pattern for Notifications
+interface Observer {
+    void update(String message);
+}
+
+class User implements Observer {
+    private int id;
+    private String username;
+    private String email;
+    private String password;
+    private String profileType;
+    private List<User> followers = new ArrayList<>();
+    private List<User> following = new ArrayList<>();
+
+    // Constructor
+    public User(String username, String email, String password, String profileType) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.profileType = profileType;
+    }
+
+    // Follow a user
+    public void follow(User user) {
+        following.add(user);
+        user.followers.add(this);
+    }
+
+    // Unfollow a user
+    public void unfollow(User user) {
+        following.remove(user);
+        user.followers.remove(this);
+    }
+
+    @Override
+    public void update(String message) {
+        System.out.println(username + " received notification: " + message);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getProfileType() {
+        return profileType;
+    }
+
+    public List<User> getFollowers() {
+        return followers;
+    }
+
+    public List<User> getFollowing() {
+        return following;
+    }
+// Getters and Setters
+}
+
+class Post {
+    private int id;
+    private User user;
+    private String photoUrl;
+    private String caption;
+    private List<Comment> comments = new ArrayList<>();
+    private List<Tag> tags = new ArrayList<>();
+
+    public Post(User user, String photoUrl, String caption) {
+        this.user = user;
+        this.photoUrl = photoUrl;
+        this.caption = caption;
+        notifyFreind();
+    }
+    public void notifyFreind()
+    {
+
+        for(User user1:user.getFollowers())
+        {
+
+            user1.update("New post by " + user.getUsername() + ": " + this.caption);
+        }
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    // Add Comment
+    public void addComment(Comment comment) {
+        comments.add(comment);
+    }
+
+    // Add Tag
+    public void addTag(Tag tag) {
+        tags.add(tag);
+    }
+
+    // Getters and Setters
+}
+
+class Comment {
+    private int id;
+    private int postId;
+    private int userId;
+    private int parentCommentId;
+    private String content;
+    private List<Tag> tags = new ArrayList<>();
+
+    public Comment(int postId, int userId, int parentCommentId, String content) {
+        this.postId = postId;
+        this.userId = userId;
+        this.parentCommentId = parentCommentId;
+        this.content = content;
+    }
+
+    // Add Tag
+    public void addTag(Tag tag) {
+        tags.add(tag);
+    }
+
+    // Getters and Setters
+}
+
+class Like {
+    private int id;
+    private int userId;
+    private Integer postId;
+    private Integer commentId;
+
+    public Like(int userId, Integer postId, Integer commentId) {
+        this.userId = userId;
+        this.postId = postId;
+        this.commentId = commentId;
+    }
+
+    // Getters and Setters
+}
+
+class Tag {
+    private int id;
+    private String name;
+
+    public Tag(String name) {
+        this.name = name;
+    }
+
+    // Getters and Setters
+}
+
+public class Main {
+    public static void main(String[] args) {
+        EntityFactory factory = new ConcreteEntityFactory();
+
+        // Create Users
+        User user1 = factory.createUser("Subham", "john@example.com", "password123", "public");
+        User user2 = factory.createUser("JaneDoe", "jane@example.com", "password456", "private");
+
+        user1.follow(user2);
+
+        // Create Post
+        Post post = factory.createPost(user2, "photo_url", "A beautiful sunset");
+
+        // Create Comment
+        Comment comment = factory.createComment(post.getId(), user2.getId(), 0, "Amazing photo!");
+
+        // Create Tag
+        Tag tag = factory.createTag("sunset");
+
+        // Add Tag to Post and Comment
+        post.addTag(tag);
+        comment.addTag(tag);
+
+        // Create Like
+        Like like = factory.createLike(user2.getId(), post.getId(), null);
+
+
+    }
+}
