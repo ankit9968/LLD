@@ -1,0 +1,95 @@
+-- Table to store driver information
+CREATE TABLE Driver (
+    driver_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15),
+    status ENUM('available', 'unavailable') DEFAULT 'available'
+);
+
+-- Table to store rider information
+CREATE TABLE Rider (
+    rider_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15)
+);
+
+-- Table to store car information and its association with drivers
+CREATE TABLE Car (
+    car_id INT AUTO_INCREMENT PRIMARY KEY,
+    driver_id INT NOT NULL,
+    car_type ENUM('Sedan', 'SUV') NOT NULL,
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id) ON DELETE CASCADE
+);
+
+-- Table to store location information (for both drivers and riders)
+CREATE TABLE Location (
+    location_id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_type ENUM('driver', 'rider') NOT NULL,
+    entity_id INT NOT NULL, -- Can reference Driver or Rider based on entity_type
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL
+);
+
+-- Table to store ride details
+CREATE TABLE Ride (
+    ride_id INT AUTO_INCREMENT PRIMARY KEY,
+    rider_id INT NOT NULL,
+    driver_id INT NOT NULL,
+    start_location_id INT NOT NULL,
+    end_location_id INT,
+    status ENUM('ongoing', 'completed', 'cancelled') DEFAULT 'ongoing',
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP,
+    FOREIGN KEY (rider_id) REFERENCES Rider(rider_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES Driver(driver_id) ON DELETE CASCADE,
+    FOREIGN KEY (start_location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (end_location_id) REFERENCES Location(location_id)
+);
+
+
+...............................Indexes........................
+-- Index on the driver's status (available/unavailable)
+CREATE INDEX idx_driver_status ON Driver(status);
+
+-- Index on location for fast lookup of nearby drivers (latitude/longitude)
+CREATE INDEX idx_location_lat_long ON Location(latitude, longitude);
+
+-- Index on rider and driver IDs for quick ride lookup
+CREATE INDEX idx_ride_rider_id ON Ride(rider_id);
+CREATE INDEX idx_ride_driver_id ON Ride(driver_id);
+
+...........................some sql query...............................
+Add a new Driver
+:=>)INSERT INTO Driver (name, phone_number, status) VALUES ('John Doe', '1234567890', 'available');
+
+
+Update ride status and end time
+:=>)UPDATE Ride
+SET status = 'completed', end_time = CURRENT_TIMESTAMP
+WHERE ride_id = 1;
+
+
+Retrieve All Available Drivers
+:=>)SELECT d.driver_id, d.name, l.latitude, l.longitude
+FROM Driver d
+JOIN Location l ON d.driver_id = l.entity_id AND l.entity_type = 'driver'
+WHERE d.status = 'available';
+
+
+Retrieve All Rides for a Specific Rider
+:=>)SELECT r.ride_id, d.name AS driver_name, l.latitude AS driver_latitude, l.longitude AS driver_longitude, r.status, r.start_time, r.end_time
+FROM Ride r
+JOIN Driver d ON r.driver_id = d.driver_id
+JOIN Location l ON d.driver_id = l.entity_id AND l.entity_type = 'driver'
+WHERE r.rider_id = 1;
+
+
+Find available drivers near a rider's location:
+:=>)SELECT d.driver_id, l.latitude, l.longitude
+    FROM Driver d
+    JOIN Location l ON d.driver_id = l.entity_id AND l.entity_type = 'driver'
+    WHERE d.status = 'available'
+    ORDER BY (POW(l.latitude - ?, 2) + POW(l.longitude - ?, 2)) ASC
+    LIMIT 1;
+here ? is rider location which we will take as input
+
