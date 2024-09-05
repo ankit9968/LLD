@@ -1,0 +1,252 @@
+package org.example;
+
+import java.util.*;
+
+// Singleton pattern for RideManager
+class RideManager {
+    private static RideManager instance = null;
+    private List<Ride> rides = new ArrayList<>();
+    private List<Driver> availableDrivers = new ArrayList<>();
+
+
+    private RideManager() {
+
+    }
+
+    public static RideManager getInstance() {
+        if (instance == null) {
+            instance = new RideManager();
+        }
+        return instance;
+    }
+
+    public void addAvailableDriver(Driver driver) {
+        availableDrivers.add(driver);
+    }
+
+
+    public Ride assignRide(Rider rider, String carType) {
+        Driver closestDriver = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (Driver driver : availableDrivers) {
+            if (driver.getCar().getType().equalsIgnoreCase(carType)) {
+                double distance = calculateDistance(rider.getLocation(), driver.getLocation());
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestDriver = driver;
+                }
+            }
+        }
+
+
+
+        if (closestDriver != null) {
+            Ride ride = new Ride(rider, closestDriver);
+            rides.add(ride);
+            availableDrivers.remove(closestDriver);
+            // Notify both rider and driver
+            NotificationService.getInstance().notifyDriver(closestDriver, "Ride assigned");
+            NotificationService.getInstance().notifyRider(rider, "Ride assigned");
+            return ride;
+        } else {
+            System.out.println("No available drivers for the requested car type nearby");
+            return null;
+        }
+    }
+
+    public double calculateDistance(Location loc1,Location loc2)
+    {
+        double latDifference = loc2.getLatitude() - loc1.getLatitude();
+        double lonDifference = loc2.getLongitude() - loc1.getLongitude();
+        return Math.sqrt(latDifference * latDifference + lonDifference * lonDifference);
+    }
+    public void completeRide(Ride ride) {
+        rides.remove(ride);
+        availableDrivers.add(ride.getDriver());
+        NotificationService.getInstance().notifyDriver(ride.getDriver(), "Ride completed");
+        NotificationService.getInstance().notifyRider(ride.getRider(), "Ride completed");
+    }
+}
+
+
+
+// Location entity to represent latitude and longitude
+class Location {
+    private double latitude;
+    private double longitude;
+
+    public Location(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+}
+
+// Factory pattern for Car creation
+abstract class Car {
+    protected String type;
+
+    public String getType() {
+        return type;
+    }
+}
+
+
+
+class Sedan extends Car {
+    public Sedan() {
+        this.type = "Sedan";
+    }
+}
+
+class SUV extends Car {
+    public SUV() {
+        this.type = "SUV";
+    }
+}
+
+class CarFactory {
+    public static Car createCar(String type) {
+        switch (type) {
+            case "Sedan":
+                return new Sedan();
+            case "SUV":
+                return new SUV();
+            default:
+                throw new IllegalArgumentException("Unknown car type: " + type);
+        }
+    }
+}
+
+// Observer pattern for notifications
+interface Observer {
+    void update(String message);
+}
+
+class NotificationService {
+    private static NotificationService instance = null;
+    private NotificationService() {}
+
+    public static NotificationService getInstance() {
+        if (instance == null) {
+            instance = new NotificationService();
+        }
+        return instance;
+    }
+
+
+    public void notifyDriver(Driver driver, String message) {
+            driver.update(message);
+    }
+
+    public void notifyRider(Rider rider, String message) {
+            rider.update(message);
+    }
+}
+
+// Rider entity with location
+class Rider implements Observer {
+    private String name;
+    private Location location;
+
+    public Rider(String name, Location location) {
+        this.name = name;
+        this.location = location;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    @Override
+    public void update(String message) {
+        System.out.println("Rider " + name + ": " + message);
+    }
+}
+
+// Driver entity with location
+class Driver implements Observer {
+    private String name;
+    private Car car;
+    private Location location;
+
+    public Driver(String name, Car car, Location location) {
+        this.name = name;
+        this.car = car;
+        this.location = location;
+    }
+
+    public Car getCar() {
+        return car;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    @Override
+    public void update(String message) {
+        System.out.println("Driver " + name + ": " + message);
+    }
+}
+
+// Ride entity
+class Ride {
+    private Rider rider;
+    private Driver driver;
+
+    public Ride(Rider rider, Driver driver) {
+        this.rider = rider;
+        this.driver = driver;
+    }
+
+    public Rider getRider() {
+        return rider;
+    }
+
+    public Driver getDriver() {
+        return driver;
+    }
+}
+
+// Main class
+public class Main {
+    public static void main(String[] args) {
+        RideManager rideManager = RideManager.getInstance();
+        NotificationService notificationService = NotificationService.getInstance();
+
+        // Create Riders and Drivers with locations
+        Rider rider1 = new Rider("Alice", new Location(12.9715987, 77.5945627));  // Location in Bangalore
+        Rider rider2 = new Rider("Bob", new Location(12.2958104, 76.639381));    // Location in Mysore
+
+        Driver driver1 = new Driver("John", CarFactory.createCar("Sedan"), new Location(12.9715987, 77.5945627));
+        Driver driver2 = new Driver("Mike", CarFactory.createCar("SUV"), new Location(12.2958104, 76.639381));
+
+        rideManager.addAvailableDriver(driver1);
+        rideManager.addAvailableDriver(driver2);
+
+        Ride ride = rideManager.assignRide(rider1, "SUV");
+        if (ride != null) {
+            System.out.println("Ride started between " + ride.getRider().getName() + " and " + ride.getDriver().getName());
+        }
+        rideManager.completeRide(ride);
+
+    }
+}
+
