@@ -1,0 +1,91 @@
+CREATE TABLE User (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    profile_type ENUM('public', 'private', 'business') DEFAULT 'public',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Follower (
+    user_id INT,
+    follower_id INT,
+    PRIMARY KEY (user_id, follower_id),
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (follower_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Post (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    photo_url VARCHAR(255) NOT NULL,
+    caption TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Comment (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT,
+    user_id INT,
+    parent_comment_id INT NULL,  -- For comments on other comments
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_comment_id) REFERENCES Comment(id) ON DELETE CASCADE
+);
+
+CREATE TABLE `Like` (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    post_id INT NULL,
+    comment_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE,
+    FOREIGN KEY (comment_id) REFERENCES Comment(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Tag (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE PostTag (
+    post_id INT,
+    tag_id INT,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES Tag(id) ON DELETE CASCADE
+);
+
+CREATE TABLE CommentTag (
+    comment_id INT,
+    tag_id INT,
+    PRIMARY KEY (comment_id, tag_id),
+    FOREIGN KEY (comment_id) REFERENCES Comment(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES Tag(id) ON DELETE CASCADE
+);
+
+........................create index for fast query..........................
+CREATE INDEX idx_user_username ON User(username);
+CREATE INDEX idx_post_user_id ON Post(user_id);
+CREATE INDEX idx_comment_post_id ON Comment(post_id);
+CREATE INDEX idx_comment_parent_comment_id ON Comment(parent_comment_id);
+CREATE INDEX idx_like_post_id ON `Like`(post_id);
+CREATE INDEX idx_like_comment_id ON `Like`(comment_id);
+CREATE INDEX idx_tag_name ON Tag(name);
+
+................................Logic to Return the Top K Tags.............................
+SELECT t.name, COUNT(*) as tag_count
+FROM (
+    SELECT tag_id FROM PostTag
+    UNION ALL
+    SELECT tag_id FROM CommentTag
+) as tag_usage
+JOIN Tag t ON tag_usage.tag_id = t.id
+GROUP BY t.name
+ORDER BY tag_count DESC
+LIMIT K;
+
