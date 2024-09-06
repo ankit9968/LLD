@@ -1,0 +1,301 @@
+import java.util.*;
+
+// Customer Management
+class Customer {
+    private String customerId;
+    private String name;
+    private String email;
+    private String phone;
+    private Address address;
+
+    public Customer(String customerId, String name, String email, String phone, Address address) {
+        this.customerId = customerId;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.address = address;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    // Getters and Setters...
+}
+
+class Address {
+    private String street;
+    private String city;
+    private String zipCode;
+
+    public Address(String street, String city, String zipCode) {
+        this.street = street;
+        this.city = city;
+        this.zipCode = zipCode;
+    }
+
+    // Getters and Setters...
+}
+
+// Order Management
+class Order {
+    private String orderId;
+    private Customer customer;
+    private List<Item> items;
+    private double totalAmount;
+    private OrderStatus status;
+    private Payment payment;
+
+    public Order(String orderId, Customer customer, List<Item> items, double totalAmount) {
+        this.orderId = orderId;
+        this.customer = customer;
+        this.items = items;
+        this.totalAmount = totalAmount;
+        this.status = OrderStatus.PENDING;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    // Getters and Setters...
+}
+
+enum OrderStatus {
+    PENDING, PROCESSING, DISPATCHED, DELIVERED, CANCELED
+}
+
+class Item {
+    private String itemId;
+    private String name;
+    private int quantity;
+    private double price;
+
+    public Item(String itemId, String name, int quantity, double price) {
+        this.itemId = itemId;
+        this.name = name;
+        this.quantity = quantity;
+        this.price = price;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    // Getters and Setters...
+}
+
+// Order Builder Pattern
+class OrderBuilder {
+    private String orderId;
+    private Customer customer;
+    private List<Item> items = new ArrayList<>();
+    private double totalAmount;
+
+    public OrderBuilder setCustomer(Customer customer) {
+        this.customer = customer;
+        return this;
+    }
+
+    public OrderBuilder addItem(Item item) {
+        items.add(item);
+        totalAmount += item.getPrice() * item.getQuantity();
+        return this;
+    }
+
+    public Order build() {
+        return new Order(orderId, customer, items, totalAmount);
+    }
+}
+
+// Inventory Management
+class Inventory {
+    private Map<String, Item> items = new HashMap<>();
+
+    public void addItem(Item item) {
+        items.put(item.itemId, item);
+    }
+
+    public boolean isItemAvailable(String itemId, int quantity) {
+        Item item = items.get(itemId);
+        return item != null && item.getQuantity() >= quantity;
+    }
+
+    public void updateStock(String itemId, int quantity) {
+        Item item = items.get(itemId);
+        if (item != null) {
+            item.setQuantity(item.getQuantity() - quantity);
+        }
+    }
+}
+
+// Delivery Management
+class Delivery {
+    private String deliveryId;
+    private Order order;
+    private DeliveryStatus status;
+    private String deliveryPersonId;
+
+    public Delivery(String deliveryId, Order order) {
+        this.deliveryId = deliveryId;
+        this.order = order;
+        this.status = DeliveryStatus.ASSIGNED;
+    }
+
+    // Getters and Setters...
+}
+
+enum DeliveryStatus {
+    ASSIGNED, IN_TRANSIT, DELIVERED
+}
+
+class DeliveryManager {
+    private Queue<Delivery> deliveryQueue = new PriorityQueue<>(new DefaultDeliveryPriorityStrategy());
+
+    public void assignDelivery(Order order) {
+        Delivery delivery = new Delivery(UUID.randomUUID().toString(), order);
+        deliveryQueue.add(delivery);
+    }
+
+    public Delivery getNextDelivery() {
+        return deliveryQueue.poll();
+    }
+}
+
+// Delivery Strategy Pattern
+interface DeliveryPriorityStrategy extends Comparator<Delivery> {}
+
+class DefaultDeliveryPriorityStrategy implements DeliveryPriorityStrategy {
+    @Override
+    public int compare(Delivery d1, Delivery d2) {
+        return d1.order.getTotalAmount() > d2.order.getTotalAmount() ? 1 : -1;
+    }
+}
+
+// Payment Processing
+class Payment {
+    private String paymentId;
+    private PaymentMethod paymentMethod;
+    private double amount;
+    private PaymentStatus status;
+
+    public Payment(String paymentId, PaymentMethod paymentMethod, double amount) {
+        this.paymentId = paymentId;
+        this.paymentMethod = paymentMethod;
+        this.amount = amount;
+        this.status = PaymentStatus.PENDING;
+    }
+
+    public void setStatus(PaymentStatus status) {
+        this.status = status;
+    }
+
+    // Getters and Setters...
+}
+
+enum PaymentMethod {
+    CREDIT_CARD, DIGITAL_WALLET, CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+    PENDING, COMPLETED, FAILED
+}
+
+interface PaymentGateway {
+    boolean processPayment(Payment payment);
+}
+
+class CreditCardPaymentGateway implements PaymentGateway {
+    @Override
+    public boolean processPayment(Payment payment) {
+        // Simulate credit card processing
+        return true;
+    }
+}
+
+class DigitalWalletPaymentGateway implements PaymentGateway {
+    @Override
+    public boolean processPayment(Payment payment) {
+        // Simulate digital wallet processing
+        return true;
+    }
+}
+
+// Factory Pattern for Payment
+class PaymentGatewayFactory {
+    public static PaymentGateway getPaymentGateway(PaymentMethod method) {
+        switch (method) {
+            case CREDIT_CARD:
+                return new CreditCardPaymentGateway();
+            case DIGITAL_WALLET:
+                return new DigitalWalletPaymentGateway();
+            default:
+                throw new UnsupportedOperationException("Payment method not supported");
+        }
+    }
+}
+
+// Security and Compliance
+class SecurityManager {
+    private static SecurityManager instance;
+
+    private SecurityManager() {}
+
+    public static SecurityManager getInstance() {
+        if (instance == null) {
+            instance = new SecurityManager();
+        }
+        return instance;
+    }
+
+    public void encryptData(String data) {
+        // Encrypt data logic
+    }
+
+    public boolean validatePaymentInfo(Payment payment) {
+        // Validation logic
+        return true;
+    }
+}
+
+// Main Class
+public class QuickCommercePlatform {
+    public static void main(String[] args) {
+        // Step 1: Create Customer
+        Address address = new Address("123 Street", "City", "12345");
+        Customer customer = new Customer("C001", "John Doe", "john@example.com", "1234567890", address);
+
+        // Step 2: Build Order
+        Item item1 = new Item("I001", "Milk", 2, 1.50);
+        Item item2 = new Item("I002", "Bread", 1, 2.00);
+        Order order = new OrderBuilder().setCustomer(customer).addItem(item1).addItem(item2).build();
+
+        // Step 3: Process Payment
+        Payment payment = new Payment("P001", PaymentMethod.CREDIT_CARD, order.getTotalAmount());
+        PaymentGateway gateway = PaymentGatewayFactory.getPaymentGateway(payment.paymentMethod);
+        if (gateway.processPayment(payment)) {
+            payment.setStatus(PaymentStatus.COMPLETED);
+        }
+
+        order.setPayment(payment);
+
+        // Step 4: Assign Delivery
+        DeliveryManager deliveryManager = new DeliveryManager();
+        deliveryManager.assignDelivery(order);
+
+        Delivery delivery = deliveryManager.getNextDelivery();
+        System.out.println("Delivery assigned for order with amount: " + order.getTotalAmount());
+    }
+}
